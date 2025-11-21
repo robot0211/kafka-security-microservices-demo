@@ -342,8 +342,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Contact
 
-- **Author**: [Your Name]
-- **Email**: [your.email@example.com]
+- **Author**: Nguyễn Tấn Phát
+- **Email**: nguyentanphatkma@gmail.com
 - **Institution**: Học viện Kỹ thuật Mật mã
 - **Project**: Apache Kafka Security Research
 
