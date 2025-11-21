@@ -1,0 +1,168 @@
+# Global Configuration for all services
+spring:
+  cloud:
+    config:
+      server:
+        git:
+          uri: file://${user.home}/config-repo
+          default-label: main
+
+# Common configuration for all services
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  level:
+    org.springframework.kafka: INFO
+    org.apache.kafka: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+---
+# Student Service Configuration
+spring:
+  config:
+    activate:
+      on-profile: student-service
+  application:
+    name: student-service
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      group-id: student-service-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+
+---
+# Course Service Configuration
+spring:
+  config:
+    activate:
+      on-profile: course-service
+  application:
+    name: course-service
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      group-id: course-service-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+
+---
+# Grade Service Configuration
+spring:
+  config:
+    activate:
+      on-profile: grade-service
+  application:
+    name: grade-service
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      group-id: grade-service-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+
+---
+# Enrollment Service Configuration
+spring:
+  config:
+    activate:
+      on-profile: enrollment-service
+  application:
+    name: enrollment-service
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      group-id: enrollment-service-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+
+---
+# Notification Service Configuration
+spring:
+  config:
+    activate:
+      on-profile: notification-service
+  application:
+    name: notification-service
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      group-id: notification-service-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+
+---
+# Identity Service Configuration
+spring:
+  config:
+    activate:
+      on-profile: identity-service
+  application:
+    name: identity-service
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      group-id: identity-service-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+
+---
+# Secured Configuration for all services
+spring:
+  config:
+    activate:
+      on-profile: secured
+  kafka:
+    bootstrap-servers: localhost:9093
+    security:
+      enabled: true
+      ssl:
+        keystore-location: /opt/kafka/ssl/kafka.client.keystore.jks
+        keystore-password: kafka123
+        truststore-location: /opt/kafka/ssl/kafka.client.truststore.jks
+        truststore-password: kafka123
+      sasl:
+        mechanism: SCRAM-SHA-512
+        jaas-config: org.apache.kafka.common.security.scram.ScramLoginModule required username="admin" password="admin123";

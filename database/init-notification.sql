@@ -1,0 +1,1 @@
+-- init notification db

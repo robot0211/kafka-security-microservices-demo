@@ -1,0 +1,46 @@
+# Maven
+/target/
+**/target/
+
+# Ignore compiled class files
+*.class
+
+# Package Files
+*.jar
+*.war
+*.ear
+
+# Ignore original jars produced during build
+**/*.jar.original
+
+# IntelliJ
+.idea/
+*.iml
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# Python env
+venv/
+
+# Docker
+docker-compose.override.yml
+
+# Others
+*.tmp
+*.swp

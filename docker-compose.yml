@@ -1,0 +1,506 @@
+version: "3.8"
+
+services:
+  # Zookeeper for Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
+    networks:
+      - student-network
+
+  # Kafka (Unsecured)
+  kafka-unsecured:
+    image: confluentinc/cp-kafka:7.4.0
+    hostname: kafka-unsecured
+    container_name: kafka-unsecured
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-unsecured:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+    volumes:
+      - kafka-unsecured-data:/var/lib/kafka/data
+    networks:
+      - student-network
+
+  # Kafka (Secured)
+  kafka-secured:
+    image: confluentinc/cp-kafka:7.4.0
+    hostname: kafka-secured
+    container_name: kafka-secured
+    depends_on:
+      - zookeeper
+    ports:
+      - "9093:9093"
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: SASL_SSL:SASL_SSL
+      KAFKA_ADVERTISED_LISTENERS: SASL_SSL://kafka-secured:29093,SASL_SSL_HOST://localhost:9093
+      KAFKA_LISTENERS: SASL_SSL://0.0.0.0:29093
+      KAFKA_SECURITY_INTER_BROKER_PROTOCOL: SASL_SSL
+      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN,SCRAM-SHA-256,SCRAM-SHA-512
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: SCRAM-SHA-512
+      KAFKA_SSL_KEYSTORE_FILENAME: kafka.server.keystore.jks
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: server_keystore_creds
+      KAFKA_SSL_KEY_CREDENTIALS: server_key_creds
+      KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.server.truststore.jks
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: server_truststore_creds
+      KAFKA_SSL_CLIENT_AUTH: required
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.auth.SimpleAclAuthorizer
+      KAFKA_SUPER_USERS: User:admin
+    volumes:
+      - kafka-secured-data:/var/lib/kafka/data
+      - ./kafka-config/ssl:/opt/kafka/ssl
+      - ./kafka-config/scripts:/opt/kafka/scripts
+    networks:
+      - student-network
+
+  # PostgreSQL Database for Student Service
+  postgres-student:
+    image: postgres:15-alpine
+    hostname: postgres-student
+    container_name: postgres-student
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: student_db
+      POSTGRES_USER: student_user
+      POSTGRES_PASSWORD: student_password
+    volumes:
+      - postgres-student-data:/var/lib/postgresql/data
+      - ./database/init-student.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - student-network
+
+  # PostgreSQL Database for Course Service
+  postgres-course:
+    image: postgres:15-alpine
+    hostname: postgres-course
+    container_name: postgres-course
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: course_db
+      POSTGRES_USER: course_user
+      POSTGRES_PASSWORD: course_password
+    volumes:
+      - postgres-course-data:/var/lib/postgresql/data
+      - ./database/init-course.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - student-network
+
+  # PostgreSQL Database for Grade Service
+  postgres-grade:
+    image: postgres:15-alpine
+    hostname: postgres-grade
+    container_name: postgres-grade
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: grade_db
+      POSTGRES_USER: grade_user
+      POSTGRES_PASSWORD: grade_password
+    volumes:
+      - postgres-grade-data:/var/lib/postgresql/data
+      - ./database/init-grade.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - student-network
+
+  # PostgreSQL Database for Enrollment Service
+  postgres-enrollment:
+    image: postgres:15-alpine
+    hostname: postgres-enrollment
+    container_name: postgres-enrollment
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_DB: enrollment_db
+      POSTGRES_USER: enrollment_user
+      POSTGRES_PASSWORD: enrollment_password
+    volumes:
+      - postgres-enrollment-data:/var/lib/postgresql/data
+      - ./database/init-enrollment.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - student-network
+
+  # PostgreSQL Database for Notification Service
+  postgres-notification:
+    image: postgres:15-alpine
+    hostname: postgres-notification
+    container_name: postgres-notification
+    ports:
+      - "5436:5432"
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: notification_user
+      POSTGRES_PASSWORD: notification_password
+    volumes:
+      - postgres-notification-data:/var/lib/postgresql/data
+      - ./database/init-notification.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - student-network
+
+  # PostgreSQL Database for Identity Service
+  postgres-identity:
+    image: postgres:15-alpine
+    hostname: postgres-identity
+    container_name: postgres-identity
+    ports:
+      - "5437:5432"
+    environment:
+      POSTGRES_DB: identity_db
+      POSTGRES_USER: identity_user
+      POSTGRES_PASSWORD: identity_password
+    volumes:
+      - postgres-identity-data:/var/lib/postgresql/data
+      - ./database/init-identity.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - student-network
+
+  # Eureka Discovery Server
+  discovery-server:
+    build:
+      context: ./discovery-server
+      dockerfile: Dockerfile
+    hostname: discovery-server
+    container_name: discovery-server
+    ports:
+      - "8761:8761"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    networks:
+      - student-network
+    depends_on:
+      - postgres-student
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # Config Server
+  config-server:
+    build:
+      context: ./config-server
+      dockerfile: Dockerfile
+    hostname: config-server
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker,native
+      SPRING_CLOUD_CONFIG_SERVER_GIT_URI: file:/config-repo
+    volumes:
+      - ./config-repo:/config-repo:ro
+    networks:
+      - student-network
+    depends_on:
+      - discovery-server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # Student Service
+  student-service:
+    build:
+      context: ./student-service
+      dockerfile: Dockerfile
+    hostname: student-service
+    container_name: student-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "optional:configserver:"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-student:5432/student_db
+      SPRING_DATASOURCE_USERNAME: student_user
+      SPRING_DATASOURCE_PASSWORD: student_password
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka-unsecured:29092
+    networks:
+      - student-network
+    depends_on:
+      - postgres-student
+      - discovery-server
+      - config-server
+      - kafka-unsecured
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Course Service
+  course-service:
+    build:
+      context: ./course-service
+      dockerfile: Dockerfile
+    hostname: course-service
+    container_name: course-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "optional:configserver:"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-course:5432/course_db
+      SPRING_DATASOURCE_USERNAME: course_user
+      SPRING_DATASOURCE_PASSWORD: course_password
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka-unsecured:29092
+    networks:
+      - student-network
+    depends_on:
+      - postgres-course
+      - discovery-server
+      - config-server
+      - kafka-unsecured
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Grade Service
+  grade-service:
+    build:
+      context: ./grade-service
+      dockerfile: Dockerfile
+    hostname: grade-service
+    container_name: grade-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "optional:configserver:"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-grade:5432/grade_db
+      SPRING_DATASOURCE_USERNAME: grade_user
+      SPRING_DATASOURCE_PASSWORD: grade_password
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka-unsecured:29092
+    networks:
+      - student-network
+    depends_on:
+      - postgres-grade
+      - discovery-server
+      - config-server
+      - kafka-unsecured
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    hostname: api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "optional:configserver:"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+    networks:
+      - student-network
+    depends_on:
+      - discovery-server
+      - config-server
+      - student-service
+      - course-service
+      - grade-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Kafka UI for monitoring
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    hostname: kafka-ui
+    container_name: kafka-ui
+    ports:
+      - "8089:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: unsecured-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-unsecured:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      KAFKA_CLUSTERS_1_NAME: secured-cluster
+      KAFKA_CLUSTERS_1_BOOTSTRAPSERVERS: kafka-secured:29093
+      KAFKA_CLUSTERS_1_ZOOKEEPER: zookeeper:2181
+      KAFKA_CLUSTERS_1_PROPERTIES_SECURITY_PROTOCOL: SASL_SSL
+      KAFKA_CLUSTERS_1_PROPERTIES_SASL_MECHANISM: PLAIN
+      KAFKA_CLUSTERS_1_PROPERTIES_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="admin" password="admin123";'
+      KAFKA_CLUSTERS_1_PROPERTIES_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.client.keystore.jks
+      KAFKA_CLUSTERS_1_PROPERTIES_SSL_KEYSTORE_PASSWORD: kafka123
+      KAFKA_CLUSTERS_1_PROPERTIES_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.client.truststore.jks
+      KAFKA_CLUSTERS_1_PROPERTIES_SSL_TRUSTSTORE_PASSWORD: kafka123
+      KAFKA_CLUSTERS_1_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+    volumes:
+      - ./kafka-config/ssl:/etc/kafka/secrets
+    networks:
+      - student-network
+    depends_on:
+      - kafka-unsecured
+      - kafka-secured
+
+  # Enrollment Service
+  enrollment-service:
+    build:
+      context: ./enrollment-service
+      dockerfile: Dockerfile
+    hostname: enrollment-service
+    container_name: enrollment-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "optional:configserver:"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-enrollment:5432/enrollment_db
+      SPRING_DATASOURCE_USERNAME: enrollment_user
+      SPRING_DATASOURCE_PASSWORD: enrollment_password
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka-unsecured:29092
+    networks:
+      - student-network
+    depends_on:
+      - postgres-enrollment
+      - discovery-server
+      - config-server
+      - kafka-unsecured
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    hostname: notification-service
+    container_name: notification-service
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "optional:configserver:"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-notification:5432/notification_db
+      SPRING_DATASOURCE_USERNAME: notification_user
+      SPRING_DATASOURCE_PASSWORD: notification_password
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka-unsecured:29092
+    networks:
+      - student-network
+    depends_on:
+      - postgres-notification
+      - discovery-server
+      - config-server
+      - kafka-unsecured
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Identity Service
+  identity-service:
+    build:
+      context: ./identity-service
+      dockerfile: Dockerfile
+    hostname: identity-service
+    container_name: identity-service
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "optional:configserver:"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-identity:5432/identity_db
+      SPRING_DATASOURCE_USERNAME: identity_user
+      SPRING_DATASOURCE_PASSWORD: identity_password
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka-unsecured:29092
+    networks:
+      - student-network
+    depends_on:
+      - postgres-identity
+      - discovery-server
+      - config-server
+      - kafka-unsecured
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+volumes:
+  zookeeper-data:
+  zookeeper-logs:
+  kafka-unsecured-data:
+  kafka-secured-data:
+  postgres-student-data:
+  postgres-course-data:
+  postgres-grade-data:
+  postgres-enrollment-data:
+  postgres-notification-data:
+  postgres-identity-data:
+
+networks:
+  student-network:
+    driver: bridge
